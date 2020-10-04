@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -eu
+
+if [ $# -eq 1 ]; then
+  if [ $1 = "-h" ]; then
+    cat <<EOF
+usage: git update-branch
+
+  After you execute this command, current branch is updated.
+
+  Actually, this command is the alias for 'git fetch origin <branch_name> && git reset --hard origin/<branch_name>'.
+
+Exception:
+
+  As these cases, update-branch doesn't do anything except put it back into the working tree from the staging.
+
+  * There are diffs in your working tree
+  * There are changes in your staging
+  * There ahead commits in your branch
+
+EOF
+    exit 0
+  fi
+fi
+
+branch_name=`git symbolic-ref --short HEAD`
+
+git add -N .
+
+if [ `git diff --name-only` ]; then
+  echo "There are some diff on working tree, so all diffs are added and reset. Plz commit or stash them."
+  git reset
+  exit 1
+else
+  if [ `git diff --cached --name-only` ]; then
+    echo "There are changes on staging, so they are reset. Plz commit or stash them."
+    git reset
+    exit 1
+  else
+    if [ $(git rev-list --count origin/$branch_name..HEAD) -gt 0 ]; then
+        echo "There are some diff compared with origin, plz push or rebase."
+        exit 1
+    else
+        git fetch origin $branch_name
+        git reset --hard origin/$branch_name
+    fi
+  fi
+fi
