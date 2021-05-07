@@ -50,7 +50,7 @@ else
     exit 1
   else
     if [ $(git rev-list --count $remote/$branch_name..HEAD) -gt 0 ]; then
-        echo "There are some diff compared with origin, plz push or rebase."
+        echo "There are some diff compared with $remote/$branch_name, plz push or rebase."
         exit 1
     else
         git fetch $remote $branch_name
