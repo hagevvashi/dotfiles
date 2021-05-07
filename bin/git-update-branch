@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 
-set -eu
+set -euo pipefail
 
-if [ $# -eq 1 ]; then
-  if [ $1 = "-h" ]; then
-    cat <<EOF
-usage: git update-branch
+function usage_exit() {
+  cat <<EOF
+Usage: git update-branch [<options>]
+
+  -r <remote>    which remote fetch from(default <remote> is origin)
+
+Description:
 
   After you execute this command, current branch is updated.
 
-  Actually, this command is the alias for 'git fetch origin <branch_name> && git reset --hard origin/<branch_name>'.
+  Actually, this command is the alias for 'git fetch <remote> <branch_name> && git reset --hard <remote>/<branch_name>'.
 
 Exception:
 
@@ -20,11 +23,19 @@ Exception:
   * There ahead commits in your branch
 
 EOF
-    exit 0
-  fi
-fi
+ exit 0
+}
 
 branch_name=`git symbolic-ref --short HEAD`
+remote='origin'
+
+while getopts :r:h OPT
+do
+  case $OPT in
+    r)      remote=$OPTARG;;
+    h|:|\?) usage_exit;;
+  esac
+done
 
 git add -N .
 
@@ -38,12 +49,12 @@ else
     git reset
     exit 1
   else
-    if [ $(git rev-list --count origin/$branch_name..HEAD) -gt 0 ]; then
+    if [ $(git rev-list --count $remote/$branch_name..HEAD) -gt 0 ]; then
         echo "There are some diff compared with origin, plz push or rebase."
         exit 1
     else
-        git fetch origin $branch_name
-        git reset --hard origin/$branch_name
+        git fetch $remote $branch_name
+        git reset --hard $remote/$branch_name
     fi
   fi
 fi
